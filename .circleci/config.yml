@@ -34,6 +34,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install packages
+          command: npm ci
+      - run:
           name: 'Build Project'
           command: 'npm run build'
       - run:
