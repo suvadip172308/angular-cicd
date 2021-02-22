@@ -1,7 +1,52 @@
 version: 2.1
-orbs:
-  heroku: circleci/heroku@0.0.10
+jobs:
+  build:
+    docker:
+      - image: circleci/node:12.0
+    working_directory: ~/repo
+    environment:
+      NODE_ENV: test
+    steps:
+      - run: node --version; npm --version
+      - checkout
+      - run:
+          name: Log versions
+          command: |
+            echo "bash: $(bash --version)"
+            echo "git: $(git --version)"
+            echo "node: $(node --version)"
+            echo "npm: $(npm --version)"
+      - restore_cache:
+          name: Restore npm cache
+          key: dependency-cache-{{checksum "package.json"}}
+      - run:
+          name: Install packages
+          command: npm ci
+      - run:
+          name: 'Build Project'
+          command: 'npm run build'
+  deploy:
+    docker:
+      - image: circleci/node:12.0
+    working_directory: ~/repo
+    environment:
+      NODE_ENV: test
+    steps:
+      - checkout
+      - run:
+          name: 'Build Project'
+          command: 'npm run build'
+      - run:
+          name: 'Deploy to Heroku'
+          command: 'heroku/deploy-via-git'
 workflows:
-  heroku_deploy:
+  version: 2.1
+  build-job:
     jobs:
-      - heroku/deploy-via-git
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: main
